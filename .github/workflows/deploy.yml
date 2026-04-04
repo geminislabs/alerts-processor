@@ -1,0 +1,125 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    env:
+      DATABASE_HOST: ${{ vars.DATABASE_HOST }}
+      DATABASE_NAME: ${{ vars.DATABASE_NAME }}
+      DATABASE_USER: ${{ vars.DATABASE_USER }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      KAFKA_BROKERS: ${{ vars.KAFKA_BROKERS }}
+      KAFKA_TOPIC: ${{ vars.KAFKA_TOPIC }}
+      KAFKA_GROUP_ID: ${{ vars.KAFKA_GROUP_ID }}
+      KAFKA_ALERTS_TOPIC: ${{ vars.KAFKA_ALERTS_TOPIC }}
+      KAFKA_RULES_UPDATES_TOPIC: ${{ vars.KAFKA_RULES_UPDATES_TOPIC }}
+      KAFKA_RULES_UPDATES_GROUP_ID: ${{ vars.KAFKA_RULES_UPDATES_GROUP_ID }}
+      KAFKA_SASL_USERNAME: ${{ secrets.KAFKA_SASL_USERNAME }}
+      KAFKA_SASL_PASSWORD: ${{ secrets.KAFKA_SASL_PASSWORD }}
+      KAFKA_SASL_MECHANISM: ${{ vars.KAFKA_SASL_MECHANISM }}
+      KAFKA_SECURITY_PROTOCOL: ${{ vars.KAFKA_SECURITY_PROTOCOL }}
+      KAFKA_FETCH_WAIT_MAX_MS: ${{ vars.KAFKA_FETCH_WAIT_MAX_MS }}
+      KAFKA_FETCH_MIN_BYTES: ${{ vars.KAFKA_FETCH_MIN_BYTES }}
+      KAFKA_SESSION_TIMEOUT_MS: ${{ vars.KAFKA_SESSION_TIMEOUT_MS }}
+      KAFKA_HEARTBEAT_INTERVAL_MS: ${{ vars.KAFKA_HEARTBEAT_INTERVAL_MS }}
+      EC2_HOST: ${{ secrets.EC2_HOST }}
+      EC2_SSH_PORT: ${{ secrets.EC2_SSH_PORT }}
+      EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate release tag
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if ! echo "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Tag '$TAG' is not valid. Expected format: vX.Y.Z"
+            exit 1
+          fi
+
+      - name: Create runtime env file
+        run: |
+          {
+            echo "DATABASE_HOST=${DATABASE_HOST}"
+            echo "DATABASE_NAME=${DATABASE_NAME}"
+            echo "DATABASE_USER=${DATABASE_USER}"
+            echo "DATABASE_PASSWORD=${DATABASE_PASSWORD}"
+            echo "KAFKA_BROKERS=${KAFKA_BROKERS}"
+            echo "KAFKA_TOPIC=${KAFKA_TOPIC}"
+            echo "KAFKA_GROUP_ID=${KAFKA_GROUP_ID}"
+            echo "KAFKA_ALERTS_TOPIC=${KAFKA_ALERTS_TOPIC}"
+            echo "KAFKA_RULES_UPDATES_TOPIC=${KAFKA_RULES_UPDATES_TOPIC}"
+            echo "KAFKA_RULES_UPDATES_GROUP_ID=${KAFKA_RULES_UPDATES_GROUP_ID}"
+            echo "KAFKA_SASL_USERNAME=${KAFKA_SASL_USERNAME}"
+            echo "KAFKA_SASL_PASSWORD=${KAFKA_SASL_PASSWORD}"
+            echo "KAFKA_SASL_MECHANISM=${KAFKA_SASL_MECHANISM}"
+            echo "KAFKA_SECURITY_PROTOCOL=${KAFKA_SECURITY_PROTOCOL}"
+            echo "KAFKA_FETCH_WAIT_MAX_MS=${KAFKA_FETCH_WAIT_MAX_MS}"
+            echo "KAFKA_FETCH_MIN_BYTES=${KAFKA_FETCH_MIN_BYTES}"
+            echo "KAFKA_SESSION_TIMEOUT_MS=${KAFKA_SESSION_TIMEOUT_MS}"
+            echo "KAFKA_HEARTBEAT_INTERVAL_MS=${KAFKA_HEARTBEAT_INTERVAL_MS}"
+          } > .env.production
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (cached)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: alert-processor:${{ github.ref_name }}
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Package image
+        run: |
+          docker save alert-processor:${GITHUB_REF_NAME} | gzip > alert-processor-${GITHUB_REF_NAME}.tar.gz
+
+      - name: Configure SSH key
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          ssh-keyscan -p "${EC2_SSH_PORT}" -H "${EC2_HOST}" >> ~/.ssh/known_hosts
+
+      - name: Upload deployment artifacts
+        run: |
+          REMOTE_TMP="/tmp/alert-processor-${GITHUB_REF_NAME}"
+          ssh -p "${EC2_SSH_PORT}" "${EC2_USERNAME}@${EC2_HOST}" "mkdir -p ${REMOTE_TMP}"
+          scp -P "${EC2_SSH_PORT}" \
+            "alert-processor-${GITHUB_REF_NAME}.tar.gz" \
+            .env.production \
+            "${EC2_USERNAME}@${EC2_HOST}:${REMOTE_TMP}/"
+
+      - name: Deploy on EC2
+        run: |
+          ssh -p "${EC2_SSH_PORT}" "${EC2_USERNAME}@${EC2_HOST}" "TAG='${GITHUB_REF_NAME}' bash -s" <<'EOF'
+          set -eu
+          REMOTE_TMP="/tmp/alert-processor-${TAG}"
+          APP_DIR="$HOME/alert-processor"
+
+          mkdir -p "$APP_DIR"
+          cp "$REMOTE_TMP/.env.production" "$APP_DIR/.env"
+
+          gzip -dc "$REMOTE_TMP/alert-processor-${TAG}.tar.gz" | docker load
+          docker rm -f alert-processor >/dev/null 2>&1 || true
+          docker run -d \
+            --name alert-processor \
+            --network siscom-network \
+            --restart unless-stopped \
+            --env-file "$APP_DIR/.env" \
+            "alert-processor:${TAG}"
+
+          rm -rf "$REMOTE_TMP"
+          EOF

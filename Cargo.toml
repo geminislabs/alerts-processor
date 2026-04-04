@@ -11,7 +11,7 @@ tokio = { version = "1", features = ["full"] }
 rdkafka = { version = "0.36", features = ["cmake-build", "sasl"] }
 
 # Database
-sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json"] }
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json"] }
 
 # Serialization
 serde = { version = "1", features = ["derive"] }

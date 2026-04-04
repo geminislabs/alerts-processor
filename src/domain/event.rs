@@ -4,6 +4,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
 pub struct IncomingEvent {
     pub event_id: Uuid,
     #[serde(default)]
@@ -27,6 +28,7 @@ impl IncomingEvent {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
 pub struct EventSource {
     #[serde(rename = "type")]
     pub source_type: String,

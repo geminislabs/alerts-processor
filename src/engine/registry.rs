@@ -23,8 +23,7 @@ impl EvaluatorRegistry {
     }
 
     pub fn register(&mut self, rule_type: &str, evaluator: Box<dyn RuleEvaluator>) {
-        self.map
-            .insert(normalize_rule_type(rule_type), evaluator);
+        self.map.insert(normalize_rule_type(rule_type), evaluator);
     }
 
     pub fn get(&self, rule_type: &str) -> Option<&dyn RuleEvaluator> {
@@ -32,7 +31,6 @@ impl EvaluatorRegistry {
             .get(&normalize_rule_type(rule_type))
             .map(Box::as_ref)
     }
-
 }
 
 fn normalize_rule_type(value: &str) -> String {

@@ -1,7 +1,7 @@
-use rdkafka::producer::FutureProducer;
 use rdkafka::consumer::StreamConsumer;
 use rdkafka::message::Message;
 use rdkafka::message::Timestamp;
+use rdkafka::producer::FutureProducer;
 use tokio::time::{timeout, Duration};
 use tracing::{error, info, warn};
 
@@ -88,8 +88,10 @@ impl Processor {
                             }
                             Timestamp::NotAvailable => None,
                         };
-                        let received_lag_ms = now_ms.saturating_sub(event.received_at.timestamp_millis());
-                        let occurred_lag_ms = now_ms.saturating_sub(event.occurred_at.timestamp_millis());
+                        let received_lag_ms =
+                            now_ms.saturating_sub(event.received_at.timestamp_millis());
+                        let occurred_lag_ms =
+                            now_ms.saturating_sub(event.occurred_at.timestamp_millis());
 
                         let rules = cache_for_events.get(&unit_id);
 

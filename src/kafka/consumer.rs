@@ -14,7 +14,11 @@ pub fn build_consumer(config: &AppConfig) -> Result<StreamConsumer> {
 }
 
 /// Builds an async Kafka `StreamConsumer` for an explicit topic/group pair.
-pub fn build_consumer_for_topic(config: &AppConfig, topic: &str, group_id: &str) -> Result<StreamConsumer> {
+pub fn build_consumer_for_topic(
+    config: &AppConfig,
+    topic: &str,
+    group_id: &str,
+) -> Result<StreamConsumer> {
     let consumer: StreamConsumer = ClientConfig::new()
         .set("bootstrap.servers", &config.kafka_brokers)
         .set("group.id", group_id)
@@ -64,8 +68,8 @@ fn parse_payload<T: DeserializeOwned>(msg: &rdkafka::message::BorrowedMessage<'_
     }
 
     // Fallback: payload is a JSON string wrapping another JSON object.
-    let inner: String =
-        serde_json::from_slice(payload).context("Kafka payload is neither a JSON object nor a JSON-encoded string")?;
+    let inner: String = serde_json::from_slice(payload)
+        .context("Kafka payload is neither a JSON object nor a JSON-encoded string")?;
 
     serde_json::from_str(&inner).context("failed to deserialize inner JSON string payload")
 }

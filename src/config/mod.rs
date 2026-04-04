@@ -48,7 +48,10 @@ impl AppConfig {
             kafka_fetch_wait_max_ms: optional_with_default("KAFKA_FETCH_WAIT_MAX_MS", "100"),
             kafka_fetch_min_bytes: optional_with_default("KAFKA_FETCH_MIN_BYTES", "1"),
             kafka_session_timeout_ms: optional_with_default("KAFKA_SESSION_TIMEOUT_MS", "6000"),
-            kafka_heartbeat_interval_ms: optional_with_default("KAFKA_HEARTBEAT_INTERVAL_MS", "2000"),
+            kafka_heartbeat_interval_ms: optional_with_default(
+                "KAFKA_HEARTBEAT_INTERVAL_MS",
+                "2000",
+            ),
             kafka_auto_offset_reset: optional_with_default("KAFKA_AUTO_OFFSET_RESET", "latest"),
         })
     }
@@ -57,10 +60,7 @@ impl AppConfig {
     pub fn database_url(&self) -> String {
         format!(
             "postgres://{}:{}@{}/{}",
-            self.database_user,
-            self.database_password,
-            self.database_host,
-            self.database_name,
+            self.database_user, self.database_password, self.database_host, self.database_name,
         )
     }
 }
