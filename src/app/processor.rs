@@ -5,7 +5,7 @@ use rdkafka::producer::FutureProducer;
 use tokio::time::{timeout, Duration};
 use tracing::{error, info, warn};
 
-use crate::cache::RulesCache;
+use crate::cache::{RuleUpdateOutcome, RulesCache};
 use crate::engine::EvaluatorRegistry;
 use crate::kafka::{parse_json_value, parse_message, publish_alert};
 
@@ -175,13 +175,57 @@ impl Processor {
                             }
                         };
 
-                        cache_for_updates.apply_update_message(&payload);
-                        info!(
-                            topic = msg.topic(),
-                            partition = msg.partition(),
-                            offset = msg.offset(),
-                            "rules update message received (no-op until contract is defined)"
-                        );
+                        match cache_for_updates.apply_update_message(&payload) {
+                            Ok(RuleUpdateOutcome::AppliedUpsert {
+                                rule_id,
+                                unit_ids_count,
+                            }) => {
+                                info!(
+                                    topic = msg.topic(),
+                                    partition = msg.partition(),
+                                    offset = msg.offset(),
+                                    operation = "UPSERT",
+                                    rule_id = %rule_id,
+                                    unit_ids_count,
+                                    "rules update applied: UPSERT"
+                                );
+                            }
+                            Ok(RuleUpdateOutcome::AppliedDelete { rule_id }) => {
+                                info!(
+                                    topic = msg.topic(),
+                                    partition = msg.partition(),
+                                    offset = msg.offset(),
+                                    operation = "DELETE",
+                                    rule_id = %rule_id,
+                                    "rules update applied: DELETE"
+                                );
+                            }
+                            Ok(RuleUpdateOutcome::SkippedStale {
+                                rule_id,
+                                incoming_updated_at,
+                                current_updated_at,
+                            }) => {
+                                info!(
+                                    topic = msg.topic(),
+                                    partition = msg.partition(),
+                                    offset = msg.offset(),
+                                    operation = "STALE_SKIP",
+                                    rule_id = %rule_id,
+                                    incoming_updated_at = %incoming_updated_at,
+                                    current_updated_at = %current_updated_at,
+                                    "rules update skipped: STALE_SKIP"
+                                );
+                            }
+                            Err(e) => {
+                                warn!(
+                                    error = %e,
+                                    topic = msg.topic(),
+                                    partition = msg.partition(),
+                                    offset = msg.offset(),
+                                    "failed to apply rules update message, skipping"
+                                );
+                            }
+                        }
                     }
                 }
             }

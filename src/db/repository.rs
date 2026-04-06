@@ -17,6 +17,7 @@ pub async fn load_rules(pool: &PgPool) -> Result<Vec<Rule>> {
             ar.organization_id,
             ar.type           AS rule_type,
             ar.config,
+            ar.updated_at,
             COALESCE(
                 array_agg(aru.unit_id) FILTER (WHERE aru.unit_id IS NOT NULL),
                 '{}'
@@ -26,7 +27,7 @@ pub async fn load_rules(pool: &PgPool) -> Result<Vec<Rule>> {
         LEFT JOIN public.alert_rule_units aru ON aru.rule_id = ar.id
         WHERE ar.is_active = true
                     AND org.status = 'ACTIVE'
-        GROUP BY ar.id, ar.organization_id, ar.type, ar.config
+        GROUP BY ar.id, ar.organization_id, ar.type, ar.config, ar.updated_at
         "#,
     )
     .fetch_all(pool)
@@ -40,6 +41,7 @@ pub async fn load_rules(pool: &PgPool) -> Result<Vec<Rule>> {
             rule_type: r.rule_type,
             config: r.config,
             unit_ids: r.unit_ids,
+            updated_at: r.updated_at,
         })
         .collect();
 

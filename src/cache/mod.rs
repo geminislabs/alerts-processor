@@ -1,3 +1,3 @@
 pub mod rules_cache;
 
-pub use rules_cache::RulesCache;
+pub use rules_cache::{RuleUpdateOutcome, RulesCache};

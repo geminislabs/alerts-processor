@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -9,6 +10,7 @@ pub struct AlertRuleRow {
     pub organization_id: Uuid,
     pub rule_type: String,
     pub config: Value,
+    pub updated_at: DateTime<Utc>,
     /// Array aggregated in the SQL query (array_agg); may be empty for rules with no units.
     pub unit_ids: Vec<Uuid>,
 }
