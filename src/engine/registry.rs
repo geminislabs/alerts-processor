@@ -17,6 +17,7 @@ impl EvaluatorRegistry {
         };
 
         registry.register("ignition_off", Box::new(IgnitionEvaluator));
+        registry.register("ignition_on", Box::new(IgnitionEvaluator));
         registry.register("geofence", Box::new(GeofenceEvaluator));
 
         registry

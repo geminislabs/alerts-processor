@@ -52,9 +52,7 @@ impl Processor {
         let process_events = async move {
             loop {
                 match timeout(Duration::from_secs(30), events_consumer.recv()).await {
-                    Err(_) => {
-                        info!("still waiting for Kafka messages (no event messages in last 30s)");
-                    }
+                    Err(_) => {}
                     Ok(Err(e)) => {
                         error!(error = %e, "kafka recv error on events consumer");
                     }
@@ -154,9 +152,7 @@ impl Processor {
         let process_rules_updates = async move {
             loop {
                 match timeout(Duration::from_secs(30), rules_updates_consumer.recv()).await {
-                    Err(_) => {
-                        info!("still waiting for Kafka messages (no rules update messages in last 30s)");
-                    }
+                    Err(_) => {}
                     Ok(Err(e)) => {
                         error!(error = %e, "kafka recv error on rules updates consumer");
                     }
