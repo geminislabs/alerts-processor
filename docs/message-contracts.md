@@ -77,6 +77,7 @@ Formato general:
   "rule": {
     "id": "417d8f6d-081d-4022-9d1a-b92b3fd3b851",
     "organization_id": "d7e11a4b-017b-4799-bf66-77f0eab0f91d",
+    "name": "Motor apagado",
     "type": "ignition_off",
     "config": {
       "event": "ignition_off"
@@ -109,6 +110,7 @@ Si llega un update con `updated_at` mas viejo que la version actual en cache, el
 Hoy la implementacion funcional depende de:
 
 - `rule.type` o `rule_type`: debe apuntar al evaluador `ignition_off`.
+- `rule.name`: se propaga como `alert_name` en el mensaje de salida.
 - `rule.config.event`: debe contener el nombre del evento esperado.
 
 Ejemplo de configuracion minima:
@@ -134,6 +136,7 @@ Campos principales:
 - `source_type`: hoy se fija en `event`.
 - `source_id`: contiene el `event_id` original.
 - `alert_type`: hoy toma el `event_type` del evento.
+- `alert_name`: contiene el `name` de la regla que disparo.
 - `payload`: reutiliza el payload del evento.
 - `occurred_at`: conserva la fecha del evento original.
 
@@ -148,6 +151,7 @@ Ejemplo:
   "source_type": "event",
   "source_id": "0ef2f6a4-9a32-48da-b394-0bd0c81df0c2",
   "alert_type": "ignition_off",
+  "alert_name": "Motor apagado",
   "payload": {
     "engine": "off",
     "speed": 0

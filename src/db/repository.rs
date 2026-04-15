@@ -15,6 +15,7 @@ pub async fn load_rules(pool: &PgPool) -> Result<Vec<Rule>> {
         SELECT
             ar.id,
             ar.organization_id,
+            ar.name,
             ar.type           AS rule_type,
             ar.config,
             ar.updated_at,
@@ -27,7 +28,7 @@ pub async fn load_rules(pool: &PgPool) -> Result<Vec<Rule>> {
         LEFT JOIN public.alert_rule_units aru ON aru.rule_id = ar.id
         WHERE ar.is_active = true
                     AND org.status = 'ACTIVE'
-        GROUP BY ar.id, ar.organization_id, ar.type, ar.config, ar.updated_at
+        GROUP BY ar.id, ar.organization_id, ar.name, ar.type, ar.config, ar.updated_at
         "#,
     )
     .fetch_all(pool)
@@ -38,6 +39,7 @@ pub async fn load_rules(pool: &PgPool) -> Result<Vec<Rule>> {
         .map(|r| Rule {
             id: r.id,
             organization_id: r.organization_id,
+            name: r.name,
             rule_type: r.rule_type,
             config: r.config,
             unit_ids: r.unit_ids,

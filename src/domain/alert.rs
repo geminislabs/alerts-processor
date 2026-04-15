@@ -12,6 +12,7 @@ pub struct Alert {
     pub source_type: String,
     pub source_id: Option<String>,
     pub alert_type: String,
+    pub alert_name: String,
     pub payload: Value,
     pub occurred_at: DateTime<Utc>,
 }

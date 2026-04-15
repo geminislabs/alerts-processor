@@ -8,6 +8,7 @@ use uuid::Uuid;
 pub struct AlertRuleRow {
     pub id: Uuid,
     pub organization_id: Uuid,
+    pub name: String,
     pub rule_type: String,
     pub config: Value,
     pub updated_at: DateTime<Utc>,

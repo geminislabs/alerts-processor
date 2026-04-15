@@ -42,6 +42,8 @@ enum RulesUpdateMessage {
 struct RuleUpsertPayload {
     id: Uuid,
     organization_id: Uuid,
+    #[serde(default)]
+    name: Option<String>,
     #[serde(rename = "type")]
     rule_type: String,
     config: serde_json::Value,
@@ -166,9 +168,12 @@ fn apply_upsert(state: &mut CacheState, incoming: RuleUpsertPayload) -> RuleUpda
         }
     }
 
+    let rule_name = incoming.name.unwrap_or_else(|| incoming.rule_type.clone());
+
     let rule = Rule {
         id: incoming.id,
         organization_id: incoming.organization_id,
+        name: rule_name,
         rule_type: incoming.rule_type,
         config: incoming.config,
         unit_ids: incoming.unit_ids.clone(),
@@ -267,6 +272,7 @@ mod tests {
             "rule": {
                 "id": rule_id,
                 "organization_id": org_id,
+                "name": "Ignition OFF Rule",
                 "type": "ignition",
                 "config": {"event": "Engine OFF"},
                 "unit_ids": [unit_id],
@@ -284,6 +290,7 @@ mod tests {
         let rules = cache.get(&unit_id);
         assert_eq!(rules.len(), 1);
         assert_eq!(rules[0].id, rule_id);
+        assert_eq!(rules[0].name, "Ignition OFF Rule");
     }
 
     #[test]

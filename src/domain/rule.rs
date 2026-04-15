@@ -6,6 +6,7 @@ use uuid::Uuid;
 pub struct Rule {
     pub id: Uuid,
     pub organization_id: Uuid,
+    pub name: String,
     pub rule_type: String,
     pub config: Value,
     pub unit_ids: Vec<Uuid>,

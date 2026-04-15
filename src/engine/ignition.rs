@@ -26,6 +26,7 @@ impl RuleEvaluator for IgnitionEvaluator {
             source_type: "event".to_string(),
             source_id: Some(event.event_id.to_string()),
             alert_type: event.event_type.clone(),
+            alert_name: rule.name.clone(),
             payload: event.payload.clone(),
             occurred_at: event.occurred_at,
         })
