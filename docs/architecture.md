@@ -147,7 +147,12 @@ Comportamiento:
 
 Definido en [src/engine/geofence.rs](../src/engine/geofence.rs).
 
-Hoy esta registrado pero no implementado. Siempre devuelve `None`.
+Comportamiento:
+
+- lee `rule.config.geofences` como lista de UUIDs permitidos,
+- lee `rule.config.transitions` (por alias `enter`/`exit` o UUID de `event_type_id`),
+- toma `payload.geofence_id` y `event_type_id` del evento,
+- genera alerta cuando ambos matches son verdaderos.
 
 ## 7. Kafka
 
@@ -198,6 +203,5 @@ Agregar una nueva regla normalmente implica:
 ## 10. Riesgos y limites actuales
 
 - si el topic de actualizaciones falla o deja de recibir eventos, la cache puede quedar desactualizada respecto a la base,
-- `geofence` todavia no agrega valor funcional,
 - no existe deduplicacion explicita de alertas en el servicio,
 - el commit de offsets es automatico, por lo que la semantica exacta de reproceso depende de Kafka y de la posicion del fallo.

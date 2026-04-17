@@ -78,7 +78,14 @@ impl Processor {
                             }
                         };
 
-                        let unit_id = event.effective_unit_id();
+                        let Some(unit_id) = event.effective_unit_id() else {
+                            warn!(
+                                event_id = %event.event_id,
+                                "event skipped: missing unit_id (and unit.id fallback)"
+                            );
+                            continue;
+                        };
+
                         let now_ms = chrono::Utc::now().timestamp_millis();
                         let kafka_lag_ms = match msg.timestamp() {
                             Timestamp::CreateTime(ts_ms) | Timestamp::LogAppendTime(ts_ms) => {
@@ -86,8 +93,8 @@ impl Processor {
                             }
                             Timestamp::NotAvailable => None,
                         };
-                        let received_lag_ms =
-                            now_ms.saturating_sub(event.received_at.timestamp_millis());
+                        let received_lag_ms = now_ms
+                            .saturating_sub(event.received_at_or_occurred_at().timestamp_millis());
                         let occurred_lag_ms =
                             now_ms.saturating_sub(event.occurred_at.timestamp_millis());
 
@@ -96,7 +103,7 @@ impl Processor {
                         if rules.is_empty() {
                             warn!(
                                 event_id = %event.event_id,
-                                event_type = %event.event_type,
+                                event_type = %event.event_label(),
                                 unit_id = %unit_id,
                                 "event skipped: no rules configured for unit"
                             );

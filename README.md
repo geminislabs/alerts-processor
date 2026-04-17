@@ -105,7 +105,7 @@ La idea es separar la logica por tipo de regla. Cada `rule_type` apunta a una im
 Evaluadores registrados hoy:
 
 - `ignition_off`: implementado en [src/engine/ignition.rs](src/engine/ignition.rs).
-- `geofence`: registrado, pero hoy es un placeholder que no genera alertas. Ver [src/engine/geofence.rs](src/engine/geofence.rs).
+- `geofence`: implementado en [src/engine/geofence.rs](src/engine/geofence.rs).
 
 ### Integracion con Kafka
 
@@ -122,7 +122,7 @@ Capacidades relevantes:
 
 ## Regla actualmente implementada
 
-La regla `ignition_off` es la unica con comportamiento real hoy.
+Hay dos tipos con comportamiento real hoy: `ignition_*` y `geofence`.
 
 Su logica actual es:
 
@@ -131,6 +131,24 @@ Su logica actual es:
 - si coinciden sin importar mayusculas/minusculas, genera una alerta.
 
 Eso significa que el nombre del `rule_type` selecciona el evaluador, pero el valor concreto esperado del evento sale de la configuracion de la regla.
+
+### Regla `geofence`
+
+La regla `geofence` usa un `config` con esta forma:
+
+```json
+{
+    "geofences": ["97003dd7-b9c2-4b76-b681-01842c9c0c7e"],
+    "transitions": ["enter", "exit"]
+}
+```
+
+La logica actual:
+
+- compara `payload.geofence_id` del evento contra `config.geofences`,
+- evalua la transicion con `event_type_id`,
+- `transitions` acepta alias (`enter`/`exit`) o UUIDs directos de tipo de evento,
+- si ambas condiciones coinciden, genera alerta.
 
 ## Variables de entorno
 
@@ -208,7 +226,6 @@ Ese workflow:
 
 ## Limitaciones actuales
 
-- `geofence` todavia no tiene implementacion funcional.
 - no hay persistencia local de estado mas alla de la cache en memoria.
 - si una alerta no puede publicarse en Kafka, se registra error en logs pero el proceso continua.
 
