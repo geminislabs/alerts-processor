@@ -152,7 +152,7 @@ Campos principales:
 - `payload`: reutiliza el payload del evento.
 - `occurred_at`: conserva la fecha del evento original.
 
-Ejemplo:
+### Ejemplo completo: alerta de ignition con `unit_name`
 
 ```json
 {
@@ -160,6 +160,54 @@ Ejemplo:
   "organization_id": "d7e11a4b-017b-4799-bf66-77f0eab0f91d",
   "unit_id": "0c2d17d2-1968-4e58-95c0-c5539ae196fd",
   "unit_name": "Camioneta Juan",
+  "rule_id": "417d8f6d-081d-4022-9d1a-b92b3fd3b851",
+  "source_type": "event",
+  "source_id": "0ef2f6a4-9a32-48da-b394-0bd0c81df0c2",
+  "alert_type": "ignition_off",
+  "alert_name": "Motor apagado",
+  "payload": {
+    "engine": "off",
+    "speed": 0
+  },
+  "occurred_at": "2026-04-07T14:20:00Z"
+}
+```
+
+### Ejemplo completo: alerta de geofence con `unit_name`
+
+```json
+{
+  "id": "7a4b6929-9f8b-4d2e-a68e-1a8e8ea4f1d3",
+  "organization_id": "c24ba579-6a27-42d9-a398-0486fbe54f8c",
+  "unit_id": "18961401-9405-4124-8d2a-e2c445d11e1a",
+  "unit_name": "Camioneta Juan",
+  "rule_id": "3b6afa2b-0f8d-4ef2-bdbf-bb20c8af9ae6",
+  "source_type": "event",
+  "source_id": "aaaabbbb-cccc-dddd-eeee-ffff11112222",
+  "alert_type": "64f9709b-8d4c-4b2e-b1ab-44b015527ba5",
+  "alert_name": "Ingreso a geocerca",
+  "payload": {
+    "uuid": "550e8400-e29b-41d4-a716-446655440003",
+    "device_id": "device-001",
+    "msg_class": "POSITION",
+    "latitude": -33.8423,
+    "longitude": -56.1605,
+    "geofence_id": "550e8400-e29b-41d4-a716-446655440001"
+  },
+  "occurred_at": "2026-04-16T14:40:10Z"
+}
+```
+
+### Ejemplo completo: alerta sin metadata de unidad (`unit_name = null`)
+
+Cuando la regla no trae nombre de unidad en DB ni en `context.units`, la alerta se emite igual y `unit_name` queda en `null`.
+
+```json
+{
+  "id": "c79fd4ad-81c9-4b42-a051-3a32d4a1d0e0",
+  "organization_id": "d7e11a4b-017b-4799-bf66-77f0eab0f91d",
+  "unit_id": "0c2d17d2-1968-4e58-95c0-c5539ae196fd",
+  "unit_name": null,
   "rule_id": "417d8f6d-081d-4022-9d1a-b92b3fd3b851",
   "source_type": "event",
   "source_id": "0ef2f6a4-9a32-48da-b394-0bd0c81df0c2",
