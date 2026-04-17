@@ -48,8 +48,22 @@ struct RuleUpsertPayload {
     rule_type: String,
     config: serde_json::Value,
     unit_ids: Vec<Uuid>,
+    #[serde(default)]
+    context: Option<RuleUpsertContext>,
     is_active: bool,
     updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RuleUpsertContext {
+    #[serde(default)]
+    units: Vec<RuleUpsertUnit>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RuleUpsertUnit {
+    id: Uuid,
+    name: String,
 }
 
 #[derive(Debug, Clone)]
@@ -170,6 +184,13 @@ fn apply_upsert(state: &mut CacheState, incoming: RuleUpsertPayload) -> RuleUpda
 
     let rule_name = incoming.name.unwrap_or_else(|| incoming.rule_type.clone());
 
+    let mut unit_names = HashMap::new();
+    if let Some(context) = &incoming.context {
+        for unit in &context.units {
+            unit_names.insert(unit.id, unit.name.clone());
+        }
+    }
+
     let rule = Rule {
         id: incoming.id,
         organization_id: incoming.organization_id,
@@ -177,6 +198,7 @@ fn apply_upsert(state: &mut CacheState, incoming: RuleUpsertPayload) -> RuleUpda
         rule_type: incoming.rule_type,
         config: incoming.config,
         unit_ids: incoming.unit_ids.clone(),
+        unit_names,
         updated_at: incoming.updated_at,
     };
 
@@ -291,6 +313,46 @@ mod tests {
         assert_eq!(rules.len(), 1);
         assert_eq!(rules[0].id, rule_id);
         assert_eq!(rules[0].name, "Ignition OFF Rule");
+        assert!(rules[0].unit_names.is_empty());
+    }
+
+    #[test]
+    fn upsert_maps_unit_names_from_context() {
+        let cache = RulesCache::build(vec![]);
+        let unit_id = Uuid::new_v4();
+        let rule_id = Uuid::new_v4();
+        let org_id = Uuid::new_v4();
+
+        let payload = json!({
+            "operation": "UPSERT",
+            "rule": {
+                "id": rule_id,
+                "organization_id": org_id,
+                "name": "Encendido",
+                "type": "ignition_on",
+                "config": {"event": "Engine ON"},
+                "unit_ids": [unit_id],
+                "context": {
+                    "units": [
+                        {
+                            "id": unit_id,
+                            "name": "Camioneta Juan"
+                        }
+                    ]
+                },
+                "is_active": true,
+                "updated_at": "2026-04-06T04:17:54.525884Z"
+            }
+        });
+
+        cache.apply_update_message(&payload).expect("valid upsert");
+
+        let rules = cache.get(&unit_id);
+        assert_eq!(rules.len(), 1);
+        assert_eq!(
+            rules[0].unit_names.get(&unit_id).map(String::as_str),
+            Some("Camioneta Juan")
+        );
     }
 
     #[test]
@@ -526,6 +588,14 @@ mod tests {
                 "type": "ignition onnn2",
                 "config": {"event": "Engine OFF"},
                 "unit_ids": [],
+                "context": {
+                    "units": [
+                        {
+                            "id": "18961401-9405-4124-8d2a-e2c445d11e1a",
+                            "name": "Camioneta Juan"
+                        }
+                    ]
+                },
                 "is_active": true,
                 "updated_at": "2026-04-06T04:17:54.525884Z"
             }

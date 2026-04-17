@@ -41,11 +41,13 @@ impl RuleEvaluator for GeofenceEvaluator {
         }
 
         let organization_id = event.organization_id.unwrap_or(rule.organization_id);
+        let unit_name = rule.unit_names.get(&unit_id).cloned();
 
         Some(Alert {
             id: Uuid::new_v4(),
             organization_id,
             unit_id,
+            unit_name,
             rule_id: rule.id,
             source_type: "event".to_string(),
             source_id: Some(event.event_id.to_string()),
@@ -110,6 +112,7 @@ fn transition_matches(transitions: &HashSet<String>, event_type_id: Option<&str>
 mod tests {
     use chrono::{DateTime, Utc};
     use serde_json::json;
+    use std::collections::HashMap;
     use uuid::Uuid;
 
     use crate::domain::{IncomingEvent, Rule};
@@ -186,6 +189,7 @@ mod tests {
             rule_type: "geofence".to_string(),
             config,
             unit_ids: vec![],
+            unit_names: HashMap::new(),
             updated_at: DateTime::parse_from_rfc3339("2026-04-16T14:40:10Z")
                 .expect("timestamp")
                 .with_timezone(&Utc),

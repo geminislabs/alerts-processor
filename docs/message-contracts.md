@@ -69,6 +69,8 @@ Formato general:
 
 - `operation = "UPSERT"` para crear o actualizar.
 - `operation = "DELETE"` para eliminar.
+- En `UPSERT`, `rule.name` se usa para poblar `alert_name` en la salida.
+- En `UPSERT`, `rule.context.units` puede incluir metadatos de unidad (`id`, `name`) para poblar `unit_name` en la salida.
 
 ### Ejemplo de UPSERT
 
@@ -86,6 +88,14 @@ Formato general:
     "unit_ids": [
       "0c2d17d2-1968-4e58-95c0-c5539ae196fd"
     ],
+    "context": {
+      "units": [
+        {
+          "id": "0c2d17d2-1968-4e58-95c0-c5539ae196fd",
+          "name": "Camioneta Juan"
+        }
+      ]
+    },
     "is_active": true,
     "updated_at": "2026-04-07T14:00:00Z"
   }
@@ -138,6 +148,7 @@ Campos principales:
 - `source_id`: contiene el `event_id` original.
 - `alert_type`: toma `event_type` cuando existe; si no, usa `event_type_id`.
 - `alert_name`: contiene el `name` de la regla que disparo.
+- `unit_name`: nombre de la unidad, cuando esta disponible en la metadata de reglas.
 - `payload`: reutiliza el payload del evento.
 - `occurred_at`: conserva la fecha del evento original.
 
@@ -148,6 +159,7 @@ Ejemplo:
   "id": "4f7db7cf-f8bc-4d9b-bf31-0efff4ac77dd",
   "organization_id": "d7e11a4b-017b-4799-bf66-77f0eab0f91d",
   "unit_id": "0c2d17d2-1968-4e58-95c0-c5539ae196fd",
+  "unit_name": "Camioneta Juan",
   "rule_id": "417d8f6d-081d-4022-9d1a-b92b3fd3b851",
   "source_type": "event",
   "source_id": "0ef2f6a4-9a32-48da-b394-0bd0c81df0c2",

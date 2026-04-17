@@ -8,6 +8,7 @@ pub struct Alert {
     pub id: Uuid,
     pub organization_id: Uuid,
     pub unit_id: Uuid,
+    pub unit_name: Option<String>,
     pub rule_id: Uuid,
     pub source_type: String,
     pub source_id: Option<String>,

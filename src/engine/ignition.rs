@@ -17,11 +17,13 @@ impl RuleEvaluator for IgnitionEvaluator {
 
         let organization_id = event.organization_id.unwrap_or(rule.organization_id);
         let unit_id = event.effective_unit_id()?;
+        let unit_name = rule.unit_names.get(&unit_id).cloned();
 
         Some(Alert {
             id: Uuid::new_v4(),
             organization_id,
             unit_id,
+            unit_name,
             rule_id: rule.id,
             source_type: "event".to_string(),
             source_id: Some(event.event_id.to_string()),
