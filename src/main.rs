@@ -27,6 +27,8 @@ async fn main() -> Result<()> {
     // ── Logo ──────────────────────────────────────────────────────────────────
     startup::print_logo();
 
+    info!("initializing components");
+
     // ── Config ────────────────────────────────────────────────────────────────
     let config = config::AppConfig::from_env()?;
     info!(
@@ -41,7 +43,6 @@ async fn main() -> Result<()> {
         "alert-processor starting"
     );
 
-    info!("initializing components");
 
     // ── Database ──────────────────────────────────────────────────────────────
     let pool = db::create_pool(&config).await?;
