@@ -43,7 +43,6 @@ async fn main() -> Result<()> {
         "alert-processor starting"
     );
 
-
     // ── Database ──────────────────────────────────────────────────────────────
     let pool = db::create_pool(&config).await?;
     info!("connected to PostgreSQL");
